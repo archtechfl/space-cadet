@@ -1,6 +1,7 @@
 // JavaScript Document
 
 import * as THREE from 'three';
+const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
 
 (function threeApp () {
 
@@ -46,12 +47,12 @@ import * as THREE from 'three';
         var renderer = new THREE.WebGLRenderer();
         renderer.setSize( window.innerWidth - 300, window.innerHeight * 0.9 );
 
-        function positionInstructions(renderer, self) {
+        function positionInstructions(renderer) {
             let instructions = document.getElementById("instructions");
-            self.document.body.insertBefore(renderer.domElement, self.document.body.firstChild);
+            document.body.insertBefore(renderer.domElement, document.body.firstChild);
         }
 
-        positionInstructions(renderer, self);
+        positionInstructions(renderer);
 
         function generateMaterials() {
             let tunnelMaterial = new THREE.MeshLambertMaterial( { color: 0xBABABA, side: THREE.DoubleSide } );
