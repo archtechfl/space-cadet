@@ -1,5 +1,7 @@
 // JavaScript Document
 
+import * as THREE from 'three';
+
 (function threeApp () {
 
         var self = this;
