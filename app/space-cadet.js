@@ -2,94 +2,123 @@
 
 (function threeApp () {
 
-        var scene = new THREE.Scene();
-        var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+        var self = this;
 
-        var light = new THREE.PointLight( 0x777777, 2, 10000 );
-        light.position.set( 0, 0, 0 );
-        scene.add( light );
+        function setUpScene() {
 
-        // scene.add( directionalLight );
+            // Set up scene, camera, and light
+
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+
+            // Set camera position and target
+
+            let cameraTarget = new THREE.Vector3( 0, 0, -200 );
+
+            camera.position.z = 0;
+
+            camera.lookAt(cameraTarget);
+
+            let light = new THREE.PointLight( 0x777777, 2, 55 );
+            light.position.set( 0, 0, 0 );
+            scene.add( light );
+
+            return {
+                scene: scene,
+                camera: camera,
+                cameraTarget: cameraTarget,
+                light: light
+            }
+
+        }
+
+        var setUp = setUpScene();
+
+        // Load camera and scene
+
+        var camera = setUp.camera,
+            scene = setUp.scene,
+            cameraTarget = setUp.cameraTarget,
+            light = setUp.light;
 
         var renderer = new THREE.WebGLRenderer();
         renderer.setSize( window.innerWidth - 300, window.innerHeight * 0.9 );
 
-        var instructions = document.getElementById("instructions");
+        function positionInstructions(renderer, self) {
+            let instructions = document.getElementById("instructions");
+            self.document.body.insertBefore(renderer.domElement, self.document.body.firstChild);
+        }
 
-        this.document.body.insertBefore(renderer.domElement, this.document.body.firstChild);
+        positionInstructions(renderer, self);
 
-        var cameraTarget = new THREE.Vector3( 0, 0, -200 );
+        function generateMaterials() {
+            let tunnelMaterial = new THREE.MeshLambertMaterial( { color: 0xBABABA, side: THREE.DoubleSide } );
+            let doorMaterial = new THREE.MeshLambertMaterial( { color: 0xFF0000, side: THREE.DoubleSide } );
+            return {
+                tunnel: tunnelMaterial,
+                door: doorMaterial
+            }
+        }
 
-        var tunnelMaterial = new THREE.MeshLambertMaterial( { color: 0xBABABA, side: THREE.DoubleSide } );
+        var materials = generateMaterials();
 
-        function buildRowBSP(length, width, height, material, position) {
-            let tunnelGeo = new THREE.CubeGeometry( length, width, height, 64, 64, 64 );
-            let tunnelMesh = new THREE.Mesh( tunnelGeo, tunnelMaterial );
+        var tunnelMaterial = materials.tunnel,
+            doorMaterial = materials.door
+
+        function buildTunnelBSP(width, height, depth, material, position) {
+            let tunnelGeo = new THREE.CubeGeometry( width, height, depth, 8, 8, 8 );
+            let tunnelMesh = new THREE.Mesh( tunnelGeo, material );
             tunnelMesh.position.set(position.x,position.y,position.z);
             var tunnel_bsp = new ThreeBSP( tunnelMesh );
-            return tunnel_bsp;
+            return {
+                bsp: tunnel_bsp,
+                mesh: tunnelMesh
+            };
         }
 
         function buildGalleryBSP(height, length, width, material, position) {
-            let galleryGeo = new THREE.CubeGeometry( height, length, width, 64, 64, 64 );
-            let galleryMesh = new THREE.Mesh( galleryGeo, tunnelMaterial );
+            let galleryGeo = new THREE.CubeGeometry( height, length, width, 8, 8, 8 );
+            let galleryMesh = new THREE.Mesh( galleryGeo, material );
             galleryMesh.position.set(position.x,position.y,position.z);
             let gallery_bsp = new ThreeBSP( galleryMesh );
-            return gallery_bsp;
+            return {
+                bsp: gallery_bsp,
+                mesh: galleryMesh
+            };
         }
 
-        // Union experiment
+        var galleryA = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: 0});
+        var galleryB = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: -65});
+        var tunnel = buildTunnelBSP(4, 4, 40, tunnelMaterial, {x: 0, y: 0, z: -35});
+        var doorA = buildGalleryBSP(4, 4, 0.1, doorMaterial, {x: 0, y: 0, z: -14.95});
 
-        function buildInitialRowBSP(tunnelMaterial, y, z) {
-            var tunnel_bsp = buildRowBSP(30, 1, 1, tunnelMaterial, {x: 15, y: 0, z: 0});
+        var sceneArray = [
+            galleryA.mesh,
+            doorA.mesh
+        ];
 
-            for (var j = 0; j < 4; j++) {
-                let gallery_bsp = buildGalleryBSP(3,3,3, tunnelMaterial, {x: j * 10, y: y, z: z});
-                tunnel_bsp = tunnel_bsp.union(gallery_bsp);
-                // Add depth tunnels
-                let depthGeo = new THREE.CubeGeometry( 1, 1, 20, 64, 64, 64 );
-                let depthMesh = new THREE.Mesh( depthGeo, tunnelMaterial );
-                depthMesh.position.set(j * 10,y,-10);
-                let depth_bsp = new ThreeBSP( depthMesh );
-                tunnel_bsp = tunnel_bsp.union(depth_bsp);
-            }
-            return tunnel_bsp;
-        };
+        // Create tunnel and other room
 
-        // Build remaining rows
+        function createRooms() {
+            scene.remove(galleryA.mesh);
+            galleryB = galleryB.bsp;
+            tunnel = tunnel.bsp;
+            galleryA = galleryA.bsp;
+            var combined = galleryB.union(tunnel).union(galleryA);
 
-        function buildAdditionalRows(bsp, tunnelMaterial, y, z) {
-            for (var rowCount = 0; rowCount < 2; rowCount++) {
-                var tunnel_bsp = buildRowBSP(30, 1, 1, tunnelMaterial, {x: 15, y: y, z: z});
-                for (var j = 0; j < 4; j++) {
-                    let gallery_bsp = buildGalleryBSP(3,3,3, tunnelMaterial, {x: j * 10, y: y, z: z});
-                    tunnel_bsp = tunnel_bsp.union(gallery_bsp);
-                }
-                bsp = bsp.union(tunnel_bsp);
-                z -= 10;
-            }
-            return bsp;
+            var combined_mesh = combined.toMesh( new THREE.MeshLambertMaterial({
+                color: 0xBABABA,
+                side: THREE.DoubleSide
+            }));
+
+            scene.add(combined_mesh);
+
         }
 
-        var initialRowBSP = buildInitialRowBSP(tunnelMaterial, 0, 0);
-
-        var combined_bsp = buildAdditionalRows(initialRowBSP, tunnelMaterial, 0, -10);
-
-        var tunnel_mesh = combined_bsp.toMesh( new THREE.MeshLambertMaterial({
-            color: 0xBABABA,
-            side: THREE.DoubleSide
-        }));
-
-        scene.add( tunnel_mesh );
-
-        // Set camera position and target
-
-        camera.position.z = 0;
-
-        camera.lookAt(cameraTarget);
+        scene.add( ...sceneArray );
 
         // Move the camera in the three dimensional space
-        function moveCamera ()
+        function controls ()
             {
                 window.onkeyup = function(e) {
                     let key = e.keyCode ? e.keyCode : e.which;
@@ -108,13 +137,22 @@
                         cameraDirection = "side";
                     }
                     switch (key) {
+                        case 16:
+                            if (doorA.mesh.position.y < 4 &&
+                                ( (cameraPositionZ < doorA.mesh.position.z + 4) &&
+                                ( cameraPositionZ > doorA.mesh.position.z - 4) )
+                            ){
+                                doorA.mesh.position.y += 4;
+                                createRooms();
+                            }
+                            break;
                         case 40:
-                            // camera.position.y -= 1;
-                            // cameraTarget.y -= 1;
+                            camera.position.y -= 1;
+                            cameraTarget.y -= 1;
                             break;
                         case 38:
-                            // camera.position.y += 1;
-                            // cameraTarget.y += 1;
+                            camera.position.y += 1;
+                            cameraTarget.y += 1;
                             break;
                         case 37:
                             // Left arrow
@@ -253,7 +291,7 @@
             {
                 requestAnimationFrame(render);
 
-                moveCamera();
+                controls();
 
                 renderer.render(scene, camera);
             };
