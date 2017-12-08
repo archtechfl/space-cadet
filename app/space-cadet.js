@@ -22,6 +22,8 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
 
             camera.lookAt(cameraTarget);
 
+            // Create a point light that will follow the camera position
+
             let light = new THREE.PointLight( 0x777777, 2, 55 );
             light.position.set( 0, 0, 0 );
             scene.add( light );
@@ -35,6 +37,8 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
 
         }
 
+        // Call scene setup
+
         var setUp = setUpScene();
 
         // Load camera and scene
@@ -47,12 +51,16 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
         var renderer = new THREE.WebGLRenderer();
         renderer.setSize( window.innerWidth - 300, window.innerHeight * 0.9 );
 
+        // Position the instructions next to the newly created Canvas element that will show the rendered scene
+
         function positionInstructions(renderer) {
             let instructions = document.getElementById("instructions");
             document.body.insertBefore(renderer.domElement, document.body.firstChild);
         }
 
         positionInstructions(renderer);
+
+        // Material factory: generates all materials that are used
 
         function generateMaterials() {
             let tunnelMaterial = new THREE.MeshLambertMaterial( { color: 0xBABABA, side: THREE.DoubleSide } );
@@ -67,6 +75,8 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
 
         var tunnelMaterial = materials.tunnel,
             doorMaterial = materials.door;
+
+        // Basic geometry factories
 
         var geoFaceComplexity = 2;
 
@@ -119,6 +129,8 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
             scene.add(combined_mesh);
 
         }
+
+        // Adds initial geometry to the scene
 
         scene.add( ...sceneArray );
 
@@ -302,6 +314,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             break;
                     }
                     camera.lookAt(cameraTarget);
+                    // Move the light to the new camera position
                     light.position.x = camera.position.x;
                     light.position.y = camera.position.y;
                     light.position.z = camera.position.z;
@@ -310,10 +323,13 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
 
         function render()
             {
+                // Start the animation cycle (call render method 60 times a second)
                 requestAnimationFrame(render);
 
+                // Listen for any key movements and adjust the scene accordingly
                 controls();
 
+                // Render the new scene
                 renderer.render(scene, camera);
             };
 
