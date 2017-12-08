@@ -63,10 +63,12 @@
         var materials = generateMaterials();
 
         var tunnelMaterial = materials.tunnel,
-            doorMaterial = materials.door
+            doorMaterial = materials.door;
 
-        function buildTunnelBSP(width, height, depth, material, position) {
-            let tunnelGeo = new THREE.CubeGeometry( width, height, depth, 8, 8, 8 );
+        var geoFaceComplexity = 2;
+
+        function buildTunnelBSP(width, height, depth, material, position, faceComplexity) {
+            let tunnelGeo = new THREE.CubeGeometry( width, height, depth, faceComplexity, faceComplexity, faceComplexity );
             let tunnelMesh = new THREE.Mesh( tunnelGeo, material );
             tunnelMesh.position.set(position.x,position.y,position.z);
             var tunnel_bsp = new ThreeBSP( tunnelMesh );
@@ -76,8 +78,8 @@
             };
         }
 
-        function buildGalleryBSP(height, length, width, material, position) {
-            let galleryGeo = new THREE.CubeGeometry( height, length, width, 8, 8, 8 );
+        function buildGalleryBSP(height, length, width, material, position, faceComplexity) {
+            let galleryGeo = new THREE.CubeGeometry( height, length, width, faceComplexity, faceComplexity, faceComplexity );
             let galleryMesh = new THREE.Mesh( galleryGeo, material );
             galleryMesh.position.set(position.x,position.y,position.z);
             let gallery_bsp = new ThreeBSP( galleryMesh );
@@ -87,10 +89,10 @@
             };
         }
 
-        var galleryA = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: 0});
-        var galleryB = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: -65});
-        var tunnel = buildTunnelBSP(4, 4, 40, tunnelMaterial, {x: 0, y: 0, z: -35});
-        var doorA = buildGalleryBSP(4, 4, 0.1, doorMaterial, {x: 0, y: 0, z: -14.95});
+        var galleryA = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: 0}, geoFaceComplexity);
+        var galleryB = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: -65}, geoFaceComplexity);
+        var tunnel = buildTunnelBSP(4, 4, 40, tunnelMaterial, {x: 0, y: 0, z: -35}, 16);
+        var doorA = buildGalleryBSP(4, 4, 0.1, doorMaterial, {x: 0, y: 0, z: -14.95}, geoFaceComplexity);
 
         var sceneArray = [
             galleryA.mesh,
@@ -120,6 +122,8 @@
         // Move the camera in the three dimensional space
         function controls ()
             {
+                // Keep track of the door status
+                var isDoorClosed = true;
                 window.onkeyup = function(e) {
                     let key = e.keyCode ? e.keyCode : e.which;
                     // Get camera target
@@ -138,12 +142,13 @@
                     }
                     switch (key) {
                         case 16:
-                            if (doorA.mesh.position.y < 4 &&
-                                ( (cameraPositionZ < doorA.mesh.position.z + 4) &&
-                                ( cameraPositionZ > doorA.mesh.position.z - 4) )
-                            ){
-                                doorA.mesh.position.y += 4;
-                                createRooms();
+                            if ( (cameraPositionZ < doorA.mesh.position.z + 4) && ( cameraPositionZ > doorA.mesh.position.z - 4) ){
+                                // Only open door if it is closed
+                                if (isDoorClosed) {
+                                    doorA.mesh.position.y += 4;
+                                    createRooms();
+                                    isDoorClosed = false;
+                                }
                             }
                             break;
                         case 40:
