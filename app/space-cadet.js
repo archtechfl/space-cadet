@@ -119,11 +119,12 @@
 
         scene.add( ...sceneArray );
 
+        // Keep track of the door status
+        var isDoorClosed = true;
+
         // Move the camera in the three dimensional space
         function controls ()
             {
-                // Keep track of the door status
-                var isDoorClosed = true;
                 window.onkeyup = function(e) {
                     let key = e.keyCode ? e.keyCode : e.which;
                     // Get camera target
@@ -202,11 +203,17 @@
                         case 65:
                             // A key (nominally "forward")
                             if (cameraDirection === "ahead") {
-                                camera.position.z -= 1;
-                                cameraTarget.z -= 1;
+                                let projectedPosition = cameraPositionZ - 1;
+                                if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                    camera.position.z -= 1;
+                                    cameraTarget.z -= 1;
+                                }
                             } else if (cameraDirection === "behind") {
-                                camera.position.z += 1;
-                                cameraTarget.z += 1;
+                                let projectedPosition = cameraPositionZ - 1;
+                                if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                    camera.position.z += 1;
+                                    cameraTarget.z += 1;
+                                }
                             } else {
                                 if (targetPositionX > cameraPositionX){
                                     // Looking x pos
@@ -220,13 +227,19 @@
                             }
                             break;
                         case 90:
-                            // W key (nominally "reverse")
+                            // Z key (nominally "reverse")
                             if (cameraDirection === "ahead") {
-                                camera.position.z += 1;
-                                cameraTarget.z += 1;
+                                let projectedPosition = cameraPositionZ + 1;
+                                if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                    camera.position.z += 1;
+                                    cameraTarget.z += 1;
+                                }
                             } else if (cameraDirection === "behind") {
-                                camera.position.z -= 1;
-                                cameraTarget.z -= 1;
+                                let projectedPosition = cameraPositionZ - 1;
+                                if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                    camera.position.z -= 1;
+                                    cameraTarget.z -= 1;
+                                }
                             } else {
                                 if (targetPositionX > cameraPositionX){
                                     // Looking x pos
