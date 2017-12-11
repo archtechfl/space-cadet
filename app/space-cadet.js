@@ -24,7 +24,9 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
 
             // Create a point light that will follow the camera position
 
-            let light = new THREE.PointLight( 0x777777, 2, 55 );
+            let lightDistance = 200;
+
+            let light = new THREE.PointLight( 0x777777, 2, lightDistance );
             light.position.set( 0, 0, 0 );
             scene.add( light );
 
@@ -80,10 +82,11 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
 
         var geoFaceComplexity = 2;
 
-        function buildTunnelBSP(width, height, depth, material, position, faceComplexity) {
+        function buildTunnelBSP(width, height, depth, material, position, faceComplexity, name) {
             let tunnelGeo = new THREE.CubeGeometry( width, height, depth, faceComplexity, faceComplexity, faceComplexity );
             let tunnelMesh = new THREE.Mesh( tunnelGeo, material );
             tunnelMesh.position.set(position.x,position.y,position.z);
+            tunnelMesh.name = name;
             var tunnel_bsp = new ThreeBSP( tunnelMesh );
             return {
                 bsp: tunnel_bsp,
@@ -91,10 +94,11 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
             };
         }
 
-        function buildGalleryBSP(height, length, width, material, position, faceComplexity) {
+        function buildGalleryBSP(height, length, width, material, position, faceComplexity, name) {
             let galleryGeo = new THREE.CubeGeometry( height, length, width, faceComplexity, faceComplexity, faceComplexity );
             let galleryMesh = new THREE.Mesh( galleryGeo, material );
             galleryMesh.position.set(position.x,position.y,position.z);
+            galleryMesh.name = name;
             let gallery_bsp = new ThreeBSP( galleryMesh );
             return {
                 bsp: gallery_bsp,
@@ -103,52 +107,68 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
         }
 
         function buildGeometries(){
-            let galleryA = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: 0}, geoFaceComplexity),
-                galleryB = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: -65}, geoFaceComplexity),
-                tunnel = buildTunnelBSP(4, 4, 40, tunnelMaterial, {x: 0, y: 0, z: -35}, 16),
-                doorA = buildGalleryBSP(4, 4, 0.1, doorMaterial, {x: 0, y: 0, z: -14.95}, geoFaceComplexity);
-            galleryA.name = "first chamber";
-            galleryB.name = "second chamber";
-            tunnel.name = "first tunnel";
-            doorA.name = "first door";
+            let galleryA = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: 0}, geoFaceComplexity, "first chamber"),
+                galleryB = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: -65}, geoFaceComplexity, "second chamber"),
+                tunnel = buildTunnelBSP(4, 4, 40, tunnelMaterial, {x: 0, y: 0, z: -35}, 16, "first tunnel"),
+                doorA = buildGalleryBSP(4, 4, 0.1, doorMaterial, {x: 0, y: 0, z: -14.95}, geoFaceComplexity, "first door");
             let group = new THREE.Group();
             group.add(
-                galleryA,
-                galleryB,
-                tunnel,
-                doorA
+                galleryA.mesh,
+                galleryB.mesh,
+                tunnel.mesh,
+                doorA.mesh
             );
             return group;
         }
 
         var geometries = buildGeometries();
 
-        var sceneArray = [
-            geometries.getObjectByName("first chamber").mesh,
-            geometries.getObjectByName("first door").mesh
-        ];
+        function buildFirstChamberScene(geometries) {
+            let group = new THREE.Group();
+            group.add(
+                geometries.getObjectByName("first chamber"),
+                geometries.getObjectByName("first door")
+            )
+            group.name = "maze";
+            return group;
+        }
 
         // Create tunnel and other room
 
         function createMaze() {
-            scene.remove(geometries.getObjectByName("first chamber").mesh);
-            galleryB = geometries.getObjectByName("second chamber").bsp;
-            tunnel = geometries.getObjectByName("tunnel chamber").bsp;
-            galleryA = geometries.getObjectByName("first chamber").bsp;
+            let firstChamber = scene.getObjectByName("first chamber");
+            let galleryB =  new ThreeBSP( geometries.getObjectByName("second chamber") );
+            let tunnel = new ThreeBSP( geometries.getObjectByName("first tunnel") );
+            let galleryA = new ThreeBSP( firstChamber );
             var combined = galleryB.union(tunnel).union(galleryA);
+
+            let getInitialGroup = scene.getObjectByName("maze");
+
+            getInitialGroup.remove(firstChamber);
 
             var combined_mesh = combined.toMesh( new THREE.MeshLambertMaterial({
                 color: 0xBABABA,
                 side: THREE.DoubleSide
             }));
 
-            scene.add(combined_mesh);
+            combined_mesh.name = "maze geometry";
 
+            getInitialGroup.add(
+                combined_mesh
+            )
+
+            scene.add(getInitialGroup);
+
+            console.log("Maze created");
+        }
+
+        function retrieveFromScene(name){
+            return scene.getObjectByName(name);
         }
 
         // Adds initial geometry to the scene
 
-        scene.add( ...sceneArray );
+        scene.add( buildFirstChamberScene(geometries) );
 
         // Keep track of the door status
         var isDoorClosed = true;
@@ -156,7 +176,9 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
         // Move the camera in the three dimensional space
         function controls ()
             {
+                // Keyboard control function
                 window.onkeyup = function(e) {
+                    // Read key
                     let key = e.keyCode ? e.keyCode : e.which;
                     // Get camera target
                     let targetPositionZ = cameraTarget.z;
@@ -174,10 +196,12 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                     }
                     switch (key) {
                         case 16:
-                            if ( (cameraPositionZ < doorA.mesh.position.z + 4) && ( cameraPositionZ > doorA.mesh.position.z - 4) ){
+                            // Load geometries for reference
+                            const doorA = retrieveFromScene("first door");
+                            if ( (cameraPositionZ < doorA.position.z + 4) && ( cameraPositionZ > doorA.position.z - 4) ){
                                 // Only open door if it is closed
                                 if (isDoorClosed) {
-                                    geometries.getObjectByName("first door").mesh.position.y += 4;
+                                    doorA.position.y += 4;
                                     createMaze();
                                     isDoorClosed = false;
                                 }
@@ -284,7 +308,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             }
                             break;
                         case 81:
-                            // Rotate camera counterclockwise 90 degrees
+                            // Rotate camera counterclockwise 90 degrees (Q)
                             console.log("Counterclockwise");
                             if (cameraDirection === "ahead") {
                                 cameraTarget.z = cameraPositionZ;
@@ -305,7 +329,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             }
                             break;
                         case 87:
-                            // Rotate camera clockwise 90 degrees
+                            // Rotate camera clockwise 90 degrees (W)
                             console.log("Clockwise");
                             if (cameraDirection === "ahead") {
                                 cameraTarget.z = cameraPositionZ;
@@ -323,6 +347,22 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                                     cameraTarget.z = cameraPositionZ - 200;
                                     cameraTarget.x = cameraPositionX;
                                 }
+                            }
+                            break;
+                        case 219:
+                            // Left bracket
+                            var maze = retrieveFromScene("maze");
+                            if (maze !== undefined){
+                                maze.rotateY(0.5 * Math.PI);
+                                maze.position.z = -70;
+                            }
+                            break;
+                        case 221:
+                            // Right bracket
+                            var maze = retrieveFromScene("maze");
+                            if (maze !== undefined){
+                                maze.rotateY(-0.5 * Math.PI);
+                                maze.position.z = -70;
                             }
                             break;
                         default:
@@ -343,7 +383,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                 requestAnimationFrame(render);
 
                 // Listen for any key movements and adjust the scene accordingly
-                controls();
+                controls(scene);
 
                 // Render the new scene
                 renderer.render(scene, camera);
