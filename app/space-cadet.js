@@ -102,6 +102,10 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
             };
         }
 
+        function buildGeometries(){
+
+        }
+
         var galleryA = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: 0}, geoFaceComplexity);
         var galleryB = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: -65}, geoFaceComplexity);
         var tunnel = buildTunnelBSP(4, 4, 40, tunnelMaterial, {x: 0, y: 0, z: -35}, 16);
@@ -112,9 +116,20 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
             doorA.mesh
         ];
 
+        var lineMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
+
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(new THREE.Vector3(-10, 0, 0));
+        geometry.vertices.push(new THREE.Vector3(0, 10, 0));
+        geometry.vertices.push(new THREE.Vector3(10, 0, 0));
+
+        var line = new THREE.Line(geometry, lineMaterial);
+
+        sceneArray.push(line);
+
         // Create tunnel and other room
 
-        function createRooms() {
+        function createMaze() {
             scene.remove(galleryA.mesh);
             galleryB = galleryB.bsp;
             tunnel = tunnel.bsp;
@@ -162,7 +177,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                                 // Only open door if it is closed
                                 if (isDoorClosed) {
                                     doorA.mesh.position.y += 4;
-                                    createRooms();
+                                    createMaze();
                                     isDoorClosed = false;
                                 }
                             }
