@@ -354,7 +354,6 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             var maze = retrieveFromScene("maze");
                             if (maze !== undefined){
                                 maze.rotateY(0.5 * Math.PI);
-                                maze.position.z = -70;
                             }
                             break;
                         case 221:
@@ -362,7 +361,6 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             var maze = retrieveFromScene("maze");
                             if (maze !== undefined){
                                 maze.rotateY(-0.5 * Math.PI);
-                                maze.position.z = -70;
                             }
                             break;
                         default:
