@@ -103,37 +103,38 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
         }
 
         function buildGeometries(){
-
+            let galleryA = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: 0}, geoFaceComplexity),
+                galleryB = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: -65}, geoFaceComplexity),
+                tunnel = buildTunnelBSP(4, 4, 40, tunnelMaterial, {x: 0, y: 0, z: -35}, 16),
+                doorA = buildGalleryBSP(4, 4, 0.1, doorMaterial, {x: 0, y: 0, z: -14.95}, geoFaceComplexity);
+            galleryA.name = "first chamber";
+            galleryB.name = "second chamber";
+            tunnel.name = "first tunnel";
+            doorA.name = "first door";
+            let group = new THREE.Group();
+            group.add(
+                galleryA,
+                galleryB,
+                tunnel,
+                doorA
+            );
+            return group;
         }
 
-        var galleryA = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: 0}, geoFaceComplexity);
-        var galleryB = buildGalleryBSP(30, 30, 30, tunnelMaterial, {x: 0, y: 0, z: -65}, geoFaceComplexity);
-        var tunnel = buildTunnelBSP(4, 4, 40, tunnelMaterial, {x: 0, y: 0, z: -35}, 16);
-        var doorA = buildGalleryBSP(4, 4, 0.1, doorMaterial, {x: 0, y: 0, z: -14.95}, geoFaceComplexity);
+        var geometries = buildGeometries();
 
         var sceneArray = [
-            galleryA.mesh,
-            doorA.mesh
+            geometries.getObjectByName("first chamber").mesh,
+            geometries.getObjectByName("first door").mesh
         ];
-
-        var lineMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
-
-        var geometry = new THREE.Geometry();
-        geometry.vertices.push(new THREE.Vector3(-10, 0, 0));
-        geometry.vertices.push(new THREE.Vector3(0, 10, 0));
-        geometry.vertices.push(new THREE.Vector3(10, 0, 0));
-
-        var line = new THREE.Line(geometry, lineMaterial);
-
-        sceneArray.push(line);
 
         // Create tunnel and other room
 
         function createMaze() {
-            scene.remove(galleryA.mesh);
-            galleryB = galleryB.bsp;
-            tunnel = tunnel.bsp;
-            galleryA = galleryA.bsp;
+            scene.remove(geometries.getObjectByName("first chamber").mesh);
+            galleryB = geometries.getObjectByName("second chamber").bsp;
+            tunnel = geometries.getObjectByName("tunnel chamber").bsp;
+            galleryA = geometries.getObjectByName("first chamber").bsp;
             var combined = galleryB.union(tunnel).union(galleryA);
 
             var combined_mesh = combined.toMesh( new THREE.MeshLambertMaterial({
@@ -176,7 +177,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             if ( (cameraPositionZ < doorA.mesh.position.z + 4) && ( cameraPositionZ > doorA.mesh.position.z - 4) ){
                                 // Only open door if it is closed
                                 if (isDoorClosed) {
-                                    doorA.mesh.position.y += 4;
+                                    geometries.getObjectByName("first door").mesh.position.y += 4;
                                     createMaze();
                                     isDoorClosed = false;
                                 }
