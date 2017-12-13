@@ -16,7 +16,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
 
             // Set camera position and target
 
-            let cameraTarget = new THREE.Vector3( 0, 0, -200 );
+            let cameraTarget = new THREE.Vector3( 0, 0, -2 );
 
             camera.position.z = 0;
 
@@ -42,6 +42,10 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
         // Call scene setup
 
         var setUp = setUpScene();
+
+        // Raycaster for collision detection
+
+        var raycaster = new THREE.Raycaster();
 
         // Load camera and scene
 
@@ -193,6 +197,14 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                         cameraDirection = "ahead";
                     } else {
                         cameraDirection = "side";
+                    }
+                    // Raycast from camera to camera target
+                    raycaster.set( cameraTarget, camera );
+                    // calculate objects intersecting the picking ray
+                    var intersects = raycaster.intersectObjects( scene.getObjectByName("maze geometry") );
+                    console.log(intersects);
+                    for ( var i = 0; i < intersects.length; i++ ) {
+                        intersects[ i ].object.material.color.set( 0xff0000 );
                     }
                     switch (key) {
                         case 16:
