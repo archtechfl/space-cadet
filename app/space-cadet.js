@@ -223,7 +223,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                         distance = intersects[0].distance;
                         console.log(distance);
                     }
-                    if (distance <= 1) {
+                    if (Math.round(distance) <= 1) {
                         collisionDetected = true;
                     }
                     return collisionDetected;
