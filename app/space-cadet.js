@@ -180,6 +180,54 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
         // Move the camera in the three dimensional space
         function controls ()
             {
+                function determineCollision(rayMaster, scene, camera, axis, operation) {
+                    // Cast a ray from the camera position in the direction of the intended movement, and check for any collision
+                    var origin = camera.position.clone(),
+                        environment = scene.children,
+                        ray = rayMaster,
+                        distance = null, // Vector for ray
+                        destination = camera.position.clone(); // The future position
+                    if (axis === "x") {
+                        if (operation === "+") {
+                            destination.setX( destination.x + 1 );
+                        } else {
+                            destination.setX( destination.x - 1 );
+                        }
+                    } else if (axis === "y") {
+                        if (operation === "+") {
+                            destination.setY( destination.y + 1 );
+                        } else {
+                            destination.setY( destination.y - 1 );
+                        }
+                    } else {
+                        if (operation === "+") {
+                            destination.setZ( destination.z + 1 );
+                        } else {
+                            destination.setZ( destination.z - 1 );
+                        }
+                    }
+                    console.log(`
+                        Origin z: ${origin.z},
+                        Destination z: ${destination.z}
+                    `);
+                    // Raycast from camera to camera target
+                    let directionVector = destination.sub( origin );
+                    rayMaster.set( origin, directionVector.clone().normalize() );
+                    scene.updateMatrixWorld();
+                    // calculate objects intersecting the picking ray
+                    var intersects = rayMaster.intersectObjects( scene.children, true );
+                    // Distance holder
+                    var distance = '';
+                    var collisionDetected = false;
+                    if (intersects.length > 0) {
+                        distance = intersects[0].distance;
+                        console.log(distance);
+                    }
+                    if (distance <= 1) {
+                        collisionDetected = true;
+                    }
+                    return collisionDetected;
+                }
                 // Keyboard control function
                 window.onkeyup = function(e) {
                     // Read key
@@ -198,15 +246,6 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                     } else {
                         cameraDirection = "side";
                     }
-                    // Raycast from camera to camera target
-                    let cameraPositionForRay = camera.position.clone();
-                    let cameraTargetForRay = cameraTarget.clone();
-                    let directionVector = cameraTargetForRay.sub( cameraPositionForRay );
-                    raycaster.set( cameraPositionForRay, directionVector.clone().normalize() );
-                    scene.updateMatrixWorld();
-                    // calculate objects intersecting the picking ray
-                    var intersects = raycaster.intersectObjects( scene.children, true );
-                    console.log(intersects);
                     // Keyboard actions
                     switch (key) {
                         case 16:
@@ -222,102 +261,144 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             }
                             break;
                         case 40:
-                            camera.position.y -= 1;
-                            cameraTarget.y -= 1;
+                            var collisionDetected = determineCollision(raycaster, scene, camera, "y", "-");
+                            if (!collisionDetected){
+                                camera.position.y -= 1;
+                                cameraTarget.y -= 1;
+                            }
                             break;
                         case 38:
-                            camera.position.y += 1;
-                            cameraTarget.y += 1;
+                            var collisionDetected = determineCollision(raycaster, scene, camera, "y", "+");
+                            if (!collisionDetected){
+                                camera.position.y += 1;
+                                cameraTarget.y += 1;
+                            }
                             break;
                         case 37:
                             // Left arrow
                             if (cameraDirection === "ahead") {
-                                camera.position.x -= 1;
-                                cameraTarget.x -= 1;
+                                var collisionDetected = determineCollision(raycaster, scene, camera, "x", "-");
+                                if (!collisionDetected){
+                                    camera.position.x -= 1;
+                                    cameraTarget.x -= 1;
+                                }
                             } else if (cameraDirection === "behind") {
-                                camera.position.x += 1;
-                                cameraTarget.x += 1;
+                                var collisionDetected = determineCollision(raycaster, scene, camera, "x", "+");
+                                if (!collisionDetected){
+                                    camera.position.x += 1;
+                                    cameraTarget.x += 1;
+                                }
                             } else {
                                 if (targetPositionX > cameraPositionX){
                                     // Looking x pos
-                                    camera.position.z -= 1;
-                                    cameraTarget.z -= 1;
+                                    var collisionDetected = determineCollision(raycaster, scene, camera, "z", "-");
+                                    if (!collisionDetected){
+                                        camera.position.z -= 1;
+                                        cameraTarget.z -= 1;
+                                    }
                                 } else {
                                     // Looking x neg
-                                    camera.position.z += 1;
-                                    cameraTarget.z += 1;
+                                    var collisionDetected = determineCollision(raycaster, scene, camera, "z", "+");
+                                    if (!collisionDetected){
+                                        camera.position.z += 1;
+                                        cameraTarget.z += 1;
+                                    }
                                 }
                             }
                             break;
                         case 39:
                             // Right arrow
                             if (cameraDirection === "ahead") {
-                                camera.position.x += 1;
-                                cameraTarget.x += 1;
+                                var collisionDetected = determineCollision(raycaster, scene, camera, "x", "+");
+                                if (!collisionDetected){
+                                    camera.position.x += 1;
+                                    cameraTarget.x += 1;
+                                }
                             } else if (cameraDirection === "behind") {
-                                camera.position.x -= 1;
-                                cameraTarget.x -= 1;
+                                var collisionDetected = determineCollision(raycaster, scene, camera, "x", "-");
+                                if (!collisionDetected){
+                                    camera.position.x -= 1;
+                                    cameraTarget.x -= 1;
+                                }
                             } else {
                                 if (targetPositionX > cameraPositionX){
+                                    var collisionDetected = determineCollision(raycaster, scene, camera, "z", "+");
+                                    if (!collisionDetected){
                                     // Looking x pos
-                                    camera.position.z += 1;
-                                    cameraTarget.z += 1;
+                                        camera.position.z += 1;
+                                        cameraTarget.z += 1;
+                                    }
                                 } else {
                                     // Looking x neg
-                                    camera.position.z -= 1;
-                                    cameraTarget.z -= 1;
+                                    var collisionDetected = determineCollision(raycaster, scene, camera, "z", "-");
+                                    if (!collisionDetected){
+                                        camera.position.z -= 1;
+                                        cameraTarget.z -= 1;
+                                    }
                                 }
                             }
                             break;
                         case 65:
                             // A key (nominally "forward")
                             if (cameraDirection === "ahead") {
-                                let projectedPosition = cameraPositionZ - 1;
-                                //if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                var collisionDetected = determineCollision(raycaster, scene, camera, "z", "-");
+                                if (!collisionDetected){
                                     camera.position.z -= 1;
                                     cameraTarget.z -= 1;
-                                //}
+                                }
                             } else if (cameraDirection === "behind") {
-                                let projectedPosition = cameraPositionZ - 1;
-                                //if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                var collisionDetected = determineCollision(raycaster, scene, camera, "z", "+");
+                                if (!collisionDetected){
                                     camera.position.z += 1;
                                     cameraTarget.z += 1;
-                                //}
+                                }
                             } else {
                                 if (targetPositionX > cameraPositionX){
                                     // Looking x pos
-                                    camera.position.x += 1;
-                                    cameraTarget.x += 1;
+                                    var collisionDetected = determineCollision(raycaster, scene, camera, "x", "+");
+                                    if (!collisionDetected){
+                                        camera.position.x += 1;
+                                        cameraTarget.x += 1;
+                                    }
                                 } else {
                                     // Looking x neg
-                                    camera.position.x -= 1;
-                                    cameraTarget.x -= 1;
+                                    var collisionDetected = determineCollision(raycaster, scene, camera, "x", "-");
+                                    if (!collisionDetected){
+                                        camera.position.x -= 1;
+                                        cameraTarget.x -= 1;
+                                    }
                                 }
                             }
                             break;
                         case 90:
                             // Z key (nominally "reverse")
                             if (cameraDirection === "ahead") {
-                                let projectedPosition = cameraPositionZ + 1;
-                                //if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                var collisionDetected = determineCollision(raycaster, scene, camera, "z", "+");
+                                if (!collisionDetected){
                                     camera.position.z += 1;
                                     cameraTarget.z += 1;
-                                //}
+                                }
                             } else if (cameraDirection === "behind") {
-                                let projectedPosition = cameraPositionZ - 1;
-                                //if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                var collisionDetected = determineCollision(raycaster, scene, camera, "z", "-");
+                                if (!collisionDetected){
                                     camera.position.z -= 1;
                                     cameraTarget.z -= 1;
-                                //}
+                                }
                             } else {
                                 if (targetPositionX > cameraPositionX){
                                     // Looking x pos
-                                    camera.position.x -= 1;
-                                    cameraTarget.x -= 1;
+                                    var collisionDetected = determineCollision(raycaster, scene, camera, "x", "-");
+                                    if (!collisionDetected){
+                                        camera.position.x -= 1;
+                                        cameraTarget.x -= 1;
+                                    }
                                 } else {
                                     // Looking x neg
-                                    camera.position.x += 1;
-                                    cameraTarget.x += 1;
+                                    var collisionDetected = determineCollision(raycaster, scene, camera, "x", "+");
+                                    if (!collisionDetected){
+                                        camera.position.x += 1;
+                                        cameraTarget.x += 1;
+                                    }
                                 }
                             }
                             break;
@@ -326,18 +407,18 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             console.log("Counterclockwise");
                             if (cameraDirection === "ahead") {
                                 cameraTarget.z = cameraPositionZ;
-                                cameraTarget.x = cameraPositionX - 200;
+                                cameraTarget.x = cameraPositionX - 1;
                             } else if (cameraDirection === "behind") {
                                 cameraTarget.z = cameraPositionZ;
-                                cameraTarget.x = cameraPositionX + 200;
+                                cameraTarget.x = cameraPositionX + 1;
                             } else {
                                 if (targetPositionX > cameraPositionX){
                                     // Looking x pos
-                                    cameraTarget.z = cameraPositionZ - 200;
+                                    cameraTarget.z = cameraPositionZ - 1;
                                     cameraTarget.x = cameraPositionX;
                                 } else {
                                     // Looking x neg
-                                    cameraTarget.z = cameraPositionZ + 200;
+                                    cameraTarget.z = cameraPositionZ + 1;
                                     cameraTarget.x = cameraPositionX;
                                 }
                             }
@@ -347,18 +428,18 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             console.log("Clockwise");
                             if (cameraDirection === "ahead") {
                                 cameraTarget.z = cameraPositionZ;
-                                cameraTarget.x = cameraPositionX + 200;
+                                cameraTarget.x = cameraPositionX + 1;
                             } else if (cameraDirection === "behind") {
                                 cameraTarget.z = cameraPositionZ;
-                                cameraTarget.x = cameraPositionX - 200;
+                                cameraTarget.x = cameraPositionX - 1;
                             } else {
                                 if (targetPositionX > cameraPositionX){
                                     // Looking right
-                                    cameraTarget.z = cameraPositionZ + 200;
+                                    cameraTarget.z = cameraPositionZ + 1;
                                     cameraTarget.x = cameraPositionX;
                                 } else {
                                     // Looking left
-                                    cameraTarget.z = cameraPositionZ - 200;
+                                    cameraTarget.z = cameraPositionZ - 1;
                                     cameraTarget.x = cameraPositionX;
                                 }
                             }
