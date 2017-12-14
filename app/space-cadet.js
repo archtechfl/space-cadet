@@ -16,7 +16,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
 
             // Set camera position and target
 
-            let cameraTarget = new THREE.Vector3( 0, 0, -2 );
+            let cameraTarget = new THREE.Vector3( 0, 0, -1 );
 
             camera.position.z = 0;
 
@@ -199,13 +199,15 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                         cameraDirection = "side";
                     }
                     // Raycast from camera to camera target
-                    raycaster.set( cameraTarget, camera );
+                    let cameraPositionForRay = camera.position.clone();
+                    let cameraTargetForRay = cameraTarget.clone();
+                    let directionVector = cameraTargetForRay.sub( cameraPositionForRay );
+                    raycaster.set( cameraPositionForRay, directionVector.clone().normalize() );
+                    scene.updateMatrixWorld();
                     // calculate objects intersecting the picking ray
-                    var intersects = raycaster.intersectObjects( scene.getObjectByName("maze geometry") );
+                    var intersects = raycaster.intersectObjects( scene.children, true );
                     console.log(intersects);
-                    for ( var i = 0; i < intersects.length; i++ ) {
-                        intersects[ i ].object.material.color.set( 0xff0000 );
-                    }
+                    // Keyboard actions
                     switch (key) {
                         case 16:
                             // Load geometries for reference
@@ -271,16 +273,16 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             // A key (nominally "forward")
                             if (cameraDirection === "ahead") {
                                 let projectedPosition = cameraPositionZ - 1;
-                                if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                //if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
                                     camera.position.z -= 1;
                                     cameraTarget.z -= 1;
-                                }
+                                //}
                             } else if (cameraDirection === "behind") {
                                 let projectedPosition = cameraPositionZ - 1;
-                                if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                //if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
                                     camera.position.z += 1;
                                     cameraTarget.z += 1;
-                                }
+                                //}
                             } else {
                                 if (targetPositionX > cameraPositionX){
                                     // Looking x pos
@@ -297,16 +299,16 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                             // Z key (nominally "reverse")
                             if (cameraDirection === "ahead") {
                                 let projectedPosition = cameraPositionZ + 1;
-                                if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                //if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
                                     camera.position.z += 1;
                                     cameraTarget.z += 1;
-                                }
+                                //}
                             } else if (cameraDirection === "behind") {
                                 let projectedPosition = cameraPositionZ - 1;
-                                if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
+                                //if (isDoorClosed && projectedPosition !== -15 || !isDoorClosed){
                                     camera.position.z -= 1;
                                     cameraTarget.z -= 1;
-                                }
+                                //}
                             } else {
                                 if (targetPositionX > cameraPositionX){
                                     // Looking x pos
