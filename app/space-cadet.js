@@ -217,7 +217,7 @@ const ThreeBSP = require('../node_modules/three-js-csg/index.js')(THREE);
                     // calculate objects intersecting the picking ray
                     var intersects = rayMaster.intersectObjects( scene.children, true );
                     // Distance holder
-                    var distance = '';
+                    var distance = 15;
                     var collisionDetected = false;
                     if (intersects.length > 0) {
                         distance = intersects[0].distance;
