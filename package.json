@@ -1,9 +1,9 @@
 {
-  "name": "space-cadet-the-maze",
+  "name": "space-cadet-permission-to-enter",
   "version": "1.0.0",
   "private": true,
-  "description": "A demonstration of ThreeJS/WebGL capabilities",
-  "main": "index.jsx",
+  "description": "A demonstration of ThreeJS/WebGL capabilities including collision detection",
+  "main": "space-cadet.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
